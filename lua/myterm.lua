@@ -147,7 +147,7 @@ end
 M.SendCmdToTerm = function()
 	local cmd = vim.fn.input("to MyTerm")
 	if vim.api.nvim_buf_is_valid(M.MyTerm.buff_id) and M.MyTerm.job_id > 0 then
-		vim.fn.chansend(M.MyTerm.job_id, { cmd })
+		vim.fn.chansend(M.MyTerm.job_id, { cmd .. "\r\n" })
 	end
 end
 
@@ -157,19 +157,29 @@ M.setup = function(opts)
 	M.MyTerm.win_h = M.config.split_win.height
 
 	-- setting highlight groups
-	local hl_split_win = vim.api.hl
-	if M.config.hl.split_win then
-	end
+	-- local hl_split_win = vim.api.hl
+	-- if M.config.hl.split_win then
+	-- end
 
 	-- Key mappings
 	if M.config.keys.enabled then
-		vim.keymap.set("n", M.config.keys.toggleSplit, M.ToggleMyTermHsplit, { desc = "Toggle MyTerm in hsplit" })
+		vim.keymap.set(
+			"n",
+			M.config.keys.toggleSplit,
+			M.ToggleMyTermHsplit,
+			{ desc = "Toggle MyTerm in hsplit", noremap = true }
+		)
 
-		vim.keymap.set("n", M.config.keys.sendCmd, M.SendCmdToTerm, { desc = "Send bash cmd to MyTerm" })
+		vim.keymap.set(
+			"n",
+			M.config.keys.sendCmd,
+			M.SendCmdToTerm,
+			{ desc = "Send bash cmd to MyTerm", noremap = true }
+		)
 
 		vim.keymap.set("n", M.config.keys.toggleFloat, function()
 			M.ToggleFloatTerm({})
-		end, { desc = "Toggle MyTerm in floating window" })
+		end, { desc = "Toggle MyTerm in floating window", noremap = true })
 	end
 
 	-- User Commands
