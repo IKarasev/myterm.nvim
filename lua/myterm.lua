@@ -22,6 +22,7 @@ M.default_config = {
 		toggleSplit = "MyTermSplit",
 		toggleFloat = "MyTermFloat",
 		sendCmd = "MyTermCmd",
+		reloadTerm = "MyTermReload",
 		info = "MyTermInfo",
 	},
 	keys = {
@@ -46,7 +47,7 @@ M.ShowInfo = function()
 	vim.print(vim.inspect(M.MyTerm))
 end
 
-M.CreateTerminalBuff = function()
+M.CreateTerminalBuffer = function()
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_call(buf, function()
 		vim.cmd.term()
@@ -68,18 +69,44 @@ M.CreateTerminalBuff = function()
 	return buf
 end
 
+M.UpdateTermWinBuffer = function()
+	if vim.api.nvim_buf_is_valid(M.MyTerm.buff_id) then
+		if vim.api.nvim_win_is_valid(M.MyTerm.win_id) then
+			vim.api.nvim_win_set_buf(M.MyTerm.win_id, M.MyTerm.buff_id)
+		end
+		if vim.api.nvim_win_is_valid(M.MyTerm.float_win_id) then
+			vim.api.nvim_win_set_buf(M.MyTerm.float_win_id, M.MyTerm.buff_id)
+		end
+	else
+		vim.print("MyTerm buffer " .. M.MyTerm.buff_id .. " is invalid")
+	end
+end
+
+M.ReloadTerminalBufer = function()
+	local old_buf = M.MyTerm.buff_id
+	local buf = M.CreateTerminalBuffer()
+	M.UpdateTermWinBuffer()
+	if vim.api.nvim_buf_is_valid(old_buf) then
+		vim.api.nvim_buf_delete(old_buf, { force = true })
+	end
+end
+
 M.NewTermHsplit = function()
 	vim.cmd.vnew()
 	vim.cmd.wincmd("J")
 	vim.cmd("set ls=0")
 	vim.api.nvim_win_set_height(0, M.MyTerm.win_h)
+
 	M.MyTerm.win_id = vim.api.nvim_get_current_win()
 
+	local tmp_buf = vim.api.nvim_get_current_buf()
 	local buf = M.MyTerm.buff_id
+
 	if not vim.api.nvim_buf_is_valid(buf) then
-		buf = M.CreateTerminalBuff()
+		buf = M.CreateTerminalBuffer()
 	end
 	vim.cmd.buffer(buf)
+	vim.api.nvim_buf_delete(tmp_buf, { force = true })
 	vim.api.nvim_command("startinsert")
 end
 
@@ -109,7 +136,7 @@ local function CreateMyTermFloating(opts)
 	-- Get or Create term buff
 	local buf = M.MyTerm.buff_id
 	if not vim.api.nvim_buf_is_valid(M.MyTerm.buff_id) then
-		buf = M.CreateTerminalBuff()
+		buf = M.CreateTerminalBuffer()
 	end
 
 	-- Set window configuration
@@ -194,6 +221,11 @@ M.setup = function(opts)
 		end, { desc = "Toogle MyTerm floating window" })
 		vim.api.nvim_create_user_command(M.config.usr_cmd.sendCmd, M.SendCmdToTerm, { desc = "Send command to MyTerm" })
 		vim.api.nvim_create_user_command(M.config.usr_cmd.info, M.ShowInfo, { desc = "Show myterm specs" })
+		vim.api.nvim_create_user_command(
+			M.config.usr_cmd.reloadTerm,
+			M.ReloadTerminalBufer,
+			{ desc = "Reload MyTerm terminal" }
+		)
 	end
 end
 
